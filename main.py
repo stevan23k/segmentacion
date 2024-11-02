@@ -51,6 +51,11 @@ plt.ylabel('Ingresos Mensuales', fontsize=12)
 plt.legend(title='Segmentos de Clientes', bbox_to_anchor=(1.05, 1), loc='upper left')
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
+
+# Guardar el gráfico en un archivo de imagen
+plt.savefig("segmentacion_clientes.png", format="png", dpi=300)
+
+# Mostrar el gráfico
 plt.show()
 
 # Analizar y mostrar características principales de cada segmento
