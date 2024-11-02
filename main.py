@@ -15,17 +15,45 @@ scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
 # Aplicar K-means
-n_clusters = 4  # Usamos 4 segmentos para una interpretación más simple
+n_clusters = 4
 kmeans = KMeans(n_clusters=n_clusters, random_state=42)
 df['Segmento'] = kmeans.fit_predict(X_scaled)
 
-# Crear un diccionario para mapear los segmentos a nombres más descriptivos
-segment_names = {
-    0: 'Jóvenes con ingresos medios',
-    1: 'Adultos con altos ingresos',
-    2: 'Jóvenes con bajos ingresos',
-    3: 'Adultos con ingresos medios'
-}
+# Analizar los centroides para entender cada segmento
+centroids = pd.DataFrame(
+    scaler.inverse_transform(kmeans.cluster_centers_),
+    columns=['Edad', 'Ingresos_Mensuales']
+)
+
+# Función para asignar nombres basados en las características reales de cada segmento
+def assign_segment_names(centroids):
+    segment_names = {}
+    for i in range(len(centroids)):
+        edad = centroids.iloc[i]['Edad']
+        ingresos = centroids.iloc[i]['Ingresos_Mensuales']
+        
+        # Determinar categoría de edad
+        if edad < 35:
+            edad_cat = 'Jóvenes'
+        elif edad < 50:
+            edad_cat = 'Adultos'
+        else:
+            edad_cat = 'Adultos mayores'
+            
+        # Determinar categoría de ingresos
+        if ingresos < df['Ingresos_Mensuales'].quantile(0.33):
+            ing_cat = 'bajos ingresos'
+        elif ingresos < df['Ingresos_Mensuales'].quantile(0.66):
+            ing_cat = 'ingresos medios'
+        else:
+            ing_cat = 'altos ingresos'
+            
+        segment_names[i] = f'{edad_cat} con {ing_cat}'
+    
+    return segment_names
+
+# Asignar nombres basados en las características reales
+segment_names = assign_segment_names(centroids)
 
 # Aplicar los nombres descriptivos
 df['Nombre_Segmento'] = df['Segmento'].map(segment_names)
@@ -52,13 +80,7 @@ plt.legend(title='Segmentos de Clientes', bbox_to_anchor=(1.05, 1), loc='upper l
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
 
-# Guardar el gráfico en un archivo de imagen
-plt.savefig("segmentacion_clientes.png", format="png", dpi=300)
-
-# Mostrar el gráfico
-plt.show()
-
-# Analizar y mostrar características principales de cada segmento
+# Mostrar características de cada segmento
 print("\nCaracterísticas de los Segmentos:")
 for segment in df['Segmento'].unique():
     segment_data = df[df['Segmento'] == segment]
